@@ -54,7 +54,7 @@ def job_name():
 
 
 @pytest.fixture
-def ssd_name():
+def disk_name():
     return f"test-ssd-{uuid.uuid4().hex[:10]}"
 
 
@@ -119,6 +119,6 @@ def test_container_job(job_name):
 
 
 @flaky(max_runs=3, min_passes=1)
-def test_ssd_job(job_name: str, ssd_name: str, capsys: "pytest.CaptureFixture[str]"):
-    job = create_local_ssd_job(PROJECT, REGION, job_name, ssd_name)
-    _test_body(job, additional_test=lambda: _check_logs(job_name, capsys))
+def test_ssd_job(job_name: str, disk_name: str, capsys: "pytest.CaptureFixture[str]"):
+    job = create_local_ssd_job(PROJECT, REGION, job_name, disk_name)
+    _test_body(job, additional_test=lambda: _check_logs(job, capsys))
