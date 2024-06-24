@@ -24,8 +24,8 @@ from google.cloud import batch_v1
 import pytest
 
 from ..create.create_with_container_no_mounting import create_container_job
-from ..create.create_with_script_no_mounting import create_script_job
 from ..create.create_with_persistent_disk import create_with_pd_job
+from ..create.create_with_script_no_mounting import create_script_job
 
 from ..delete.delete_job import delete_job
 from ..get.get_job import get_job
@@ -97,7 +97,6 @@ def _check_tasks(job_name):
 
 
 def _check_policy(job: batch_v1.Job, job_name: str, disk_name: str):
-    breakpoint()
     assert job_name in job.name
     assert job.allocation_policy.instances[0].policy.disks[0].device_name == disk_name
 
