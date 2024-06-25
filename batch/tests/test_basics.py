@@ -20,11 +20,12 @@ import uuid
 from flaky import flaky
 
 import google.auth
-from google.cloud import batch_v1
+from google.cloud import batch_v1, resourcemanager_v3
 import pytest
 
 from ..create.create_with_container_no_mounting import create_container_job
 from ..create.create_with_script_no_mounting import create_script_job
+from ..create.create_with_secret_manager import create_with_secret_manager
 
 from ..delete.delete_job import delete_job
 from ..get.get_job import get_job
@@ -35,6 +36,12 @@ from ..logs.read_job_logs import print_job_logs
 
 PROJECT = google.auth.default()[1]
 REGION = "europe-north1"
+SECRET_NAME = "TEST_SECRET"
+PROJECT_NUMBER = (
+    resourcemanager_v3.ProjectsClient()
+    .get_project(name=f"projects/{PROJECT}")
+    .name.split("/")[1]
+)
 
 TIMEOUT = 600  # 10 minutes
 
@@ -100,6 +107,10 @@ def _check_logs(job, capsys):
     assert all("Hello world!" in log_msg for log_msg in output)
 
 
+def _check_secret_set(job: batch_v1.Job, secret_name: str):
+    assert secret_name in job.task_groups[0].task_spec.environment.secret_variables
+
+
 @flaky(max_runs=3, min_passes=1)
 def test_script_job(job_name, capsys):
     job = create_script_job(PROJECT, REGION, job_name)
@@ -110,3 +121,10 @@ def test_script_job(job_name, capsys):
 def test_container_job(job_name):
     job = create_container_job(PROJECT, REGION, job_name)
     _test_body(job, additional_test=lambda: _check_tasks(job_name))
+
+
+@flaky(max_runs=3, min_passes=1)
+def test_secret_manager_job(job_name):
+    secrets = {SECRET_NAME: f"projects/{PROJECT_NUMBER}/secrets/{SECRET_NAME}/versions/latest"}
+    job = create_with_secret_manager(PROJECT, REGION, job_name, secrets)
+    _test_body(job, additional_test=lambda: _check_secret_set(job, SECRET_NAME))
